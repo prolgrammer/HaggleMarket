@@ -1,0 +1,75 @@
+services:
+  app:
+    image: ghcr.io/em-stawberry/stawberry:latest
+    restart: unless-stopped
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=price_negotiation
+      - DB_MAX_OPEN_CONNS=4
+      - DB_MAX_IDLE_CONNS=2
+      - SERVER_PORT=8080
+      - TOKEN_SECRET=${TOKEN_SECRET}
+      - TOKEN_ACCESS_DURATION=15m
+      - TOKEN_REFRESH_DURATION=24h
+      - ENVIRONMENT=production
+    depends_on:
+      - db
+    networks:
+      - app-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.app.rule=Host(`stawberry.ix.tc`)"
+      - "traefik.http.routers.app.entrypoints=websecure"
+      - "traefik.http.routers.app.tls.certresolver=letsencrypt"
+      - "traefik.http.services.app.loadbalancer.server.port=8080"
+
+  db:
+    image: postgres:17-alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=price_negotiation
+    healthcheck:
+      test: ["CMD-SHELL", "sh -c 'pg_isready -U postgres -d price_negotiation'"]
+      interval: 5s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  traefik:
+    image: traefik:v3.4
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik-config:/etc/traefik
+      - letsencrypt:/letsencrypt
+    networks:
+      - app-network
+    depends_on:
+      - app
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.email=admin@stawberry.ix.tc"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+      - "--log.level=DEBUG"
+
+volumes:
+  db-data:
+  traefik-config:
+  letsencrypt:
+
+networks:
+  app-network:

@@ -1,0 +1,38 @@
+version: "2"
+linters:
+  enable:
+    - govet # Catches suspicious constructs
+    - staticcheck #  catches bugs, unused code, best practices
+    - errcheck # checking for unchecked errors
+    - unused # checks Go code for unused constants, variables, functions and types
+    - prealloc # finds slice declarations that could potentially be pre-allocated
+    - bodyclose # checks whether HTTP response body is closed successfully
+    # Temporary turned off
+    # - cyclop # checks function and package cyclomatic complexity
+    - gocognit # checks function cognitive complexity
+    - godox # tool for detection of F*IXME, T*ODO and other comment keywords
+    - lll # reports long lines
+    - rowserrcheck # checks whether Rows.Err of rows is checked successfully
+    - revive # Enable after old code is removed
+    - gosec # Security linter. Enable later.
+  settings:
+    errcheck:
+      exclude-functions:
+        - (*github.com/gin-gonic/gin.Context).Error
+    revive:
+      rules:
+        - name: exported
+          disabled: true
+    gosec:
+      excludes:
+        - G115
+  exclusions:
+    rules:
+      - path: "docs/"
+        linters:
+          - lll
+
+formatters:
+  enable:
+    - gofmt # checks if the code is formatted according to 'gofmt' command
+    - goimports # Checks if the code and import statements are formatted according to the 'goimports' command

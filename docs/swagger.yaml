@@ -1,0 +1,825 @@
+definitions:
+  apperror.Error:
+    properties:
+      errCode:
+        type: string
+      errMsg:
+        type: string
+      wrappedErr: {}
+    type: object
+  dto.AddReviewDTO:
+    properties:
+      rating:
+        maximum: 5
+        minimum: 1
+        type: integer
+      review:
+        type: string
+    required:
+    - rating
+    - review
+    type: object
+  dto.GetUserOffersResp:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/dto.OfferResp'
+        type: array
+      meta:
+        properties:
+          current_page:
+            type: integer
+          per_page:
+            type: integer
+          total_items:
+            type: integer
+          total_pages:
+            type: integer
+        type: object
+    type: object
+  dto.LoginUserReq:
+    properties:
+      email:
+        type: string
+      fingerprint:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - fingerprint
+    - password
+    type: object
+  dto.LoginUserResp:
+    properties:
+      access_token:
+        type: string
+      refresh_token:
+        type: string
+    type: object
+  dto.LogoutReq:
+    properties:
+      fingerprint:
+        type: string
+      refresh_token:
+        type: string
+    required:
+    - fingerprint
+    type: object
+  dto.OfferResp:
+    properties:
+      createdAt:
+        type: string
+      currency:
+        type: string
+      expiresAt:
+        type: string
+      id:
+        type: integer
+      price:
+        type: number
+      productID:
+        type: integer
+      shopID:
+        type: integer
+      status:
+        type: string
+    type: object
+  dto.PatchOfferStatusReq:
+    properties:
+      status:
+        type: string
+    required:
+    - status
+    type: object
+  dto.PatchOfferStatusResp:
+    properties:
+      new_status:
+        type: string
+    type: object
+  dto.PostOfferReq:
+    properties:
+      currency:
+        type: string
+      price:
+        minimum: 0
+        type: number
+      product_id:
+        type: integer
+      shop_id:
+        type: integer
+    required:
+    - currency
+    - price
+    - product_id
+    - shop_id
+    type: object
+  dto.PostOfferResp:
+    properties:
+      id:
+        type: integer
+    type: object
+  dto.RefreshReq:
+    properties:
+      fingerprint:
+        type: string
+      refresh_token:
+        type: string
+    required:
+    - fingerprint
+    type: object
+  dto.RefreshResp:
+    properties:
+      access_token:
+        type: string
+      refresh_token:
+        type: string
+    type: object
+  dto.RegistrationUserReq:
+    properties:
+      email:
+        type: string
+      fingerprint:
+        type: string
+      name:
+        type: string
+      password:
+        type: string
+      phone:
+        type: string
+    required:
+    - email
+    - fingerprint
+    - name
+    - password
+    - phone
+    type: object
+  dto.RegistrationUserResp:
+    properties:
+      access_token:
+        type: string
+      refresh_token:
+        type: string
+    type: object
+  entity.Product:
+    properties:
+      average_rating:
+        type: number
+      category_id:
+        type: integer
+      count_reviews:
+        type: integer
+      description:
+        type: string
+      id:
+        type: integer
+      maximal_price:
+        type: integer
+      minimal_price:
+        type: integer
+      name:
+        type: string
+      product_attributes:
+        additionalProperties: true
+        type: object
+    type: object
+  entity.ProductReview:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: integer
+      product_id:
+        type: integer
+      rating:
+        type: integer
+      review:
+        type: string
+      user_id:
+        type: integer
+    type: object
+  entity.SellerReview:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: integer
+      rating:
+        type: integer
+      review:
+        type: string
+      seller_id:
+        type: integer
+      user_id:
+        type: integer
+    type: object
+  guestoffer.GuestPostOfferReq:
+    properties:
+      currency:
+        type: string
+      guest_email:
+        type: string
+      guest_name:
+        type: string
+      guest_phone:
+        type: string
+      offer_price:
+        type: number
+      product_id:
+        type: integer
+      store_id:
+        type: integer
+    required:
+    - currency
+    - guest_email
+    - guest_name
+    - guest_phone
+    - offer_price
+    - product_id
+    - store_id
+    type: object
+info:
+  contact: {}
+  description: Это API для управления сделками по продуктам.
+  title: Stawberry API
+  version: "1.0"
+paths:
+  /audit/logs:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve audit trail entries with time range filtering and pagination
+      parameters:
+      - description: 'Start time in RFC3339 format (default: 24h ago)'
+        format: date-time
+        in: query
+        name: from
+        type: string
+      - description: 'End time in RFC3339 format (default: now)'
+        format: date-time
+        in: query
+        name: to
+        type: string
+      - description: Filter by user ID
+        in: query
+        name: uid
+        type: integer
+      - description: Items per page (default 100)
+        in: query
+        maximum: 500
+        minimum: 1
+        name: limit
+        type: integer
+      - description: Page number (default 1)
+        in: query
+        minimum: 1
+        name: page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Returns paginated audit logs
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request parameters
+          schema: {}
+        "500":
+          description: Internal server error
+          schema: {}
+      summary: Get audit logs
+      tags:
+      - Audit
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Аутентифицирует пользователя и возвращает токены access/refresh
+      parameters:
+      - description: Учетные данные пользователя
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/dto.LoginUserReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.LoginUserResp'
+        "400":
+          description: Bad Request
+          schema: {}
+      summary: Аутентификация пользователя
+      tags:
+      - auth
+  /auth/logout:
+    post:
+      consumes:
+      - application/json
+      description: Выход пользователя и инвалидация токена обновления
+      parameters:
+      - description: Данные для выхода
+        in: body
+        name: logout
+        required: true
+        schema:
+          $ref: '#/definitions/dto.LogoutReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema: {}
+      summary: Выход из системы
+      tags:
+      - auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Обновляет токены access и refresh
+      parameters:
+      - description: Данные токена refresh
+        in: body
+        name: refresh
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RefreshReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.RefreshResp'
+        "400":
+          description: Bad Request
+          schema: {}
+      summary: Обновление токенов
+      tags:
+      - auth
+  /auth/reg:
+    post:
+      consumes:
+      - application/json
+      description: Регистрирует нового пользователя и возвращает токены доступа/обновления
+      parameters:
+      - description: Данные для регистрации пользователя
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RegistrationUserReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.RegistrationUserResp'
+        "400":
+          description: Bad Request
+          schema: {}
+      summary: Регистрация нового пользователя
+      tags:
+      - auth
+  /guest/offers:
+    post:
+      consumes:
+      - application/json
+      description: Allows sending an offer for a product on behalf of a guest
+      parameters:
+      - description: Guest offer data
+        in: body
+        name: offer
+        required: true
+        schema:
+          $ref: '#/definitions/guestoffer.GuestPostOfferReq'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Offer accepted and forwarded
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid guest offer data
+          schema:
+            $ref: '#/definitions/apperror.Error'
+        "404":
+          description: Store or product not found
+          schema:
+            $ref: '#/definitions/apperror.Error'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/apperror.Error'
+      summary: Send a guest offer
+      tags:
+      - guest
+  /health:
+    get:
+      description: Возвращает статус сервера и текущее время
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешный ответ с данными
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Получить статус сервера
+      tags:
+      - health
+  /offers:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - default: 1
+        description: Page number for pagination
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Number of items per page (5-100)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.GetUserOffersResp'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Error'
+      summary: Get user's offers
+      tags:
+      - offer
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Offer creation request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.PostOfferReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.PostOfferResp'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Error'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/apperror.Error'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/apperror.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Error'
+      summary: Create offer
+      tags:
+      - offer
+  /offers/{offerID}:
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Offer ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Offer status update request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.PatchOfferStatusReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PatchOfferStatusResp'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.Error'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/apperror.Error'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/apperror.Error'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/apperror.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.Error'
+      summary: Update offer status
+      tags:
+      - offer
+  /products:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список продуктов по фильтру (категория, цена, магазин,
+        имя, атрибуты) с поддержкой пагинации
+      parameters:
+      - description: Номер страницы (по умолчанию 1)
+        in: query
+        name: page
+        type: integer
+      - description: Размер страницы (по умолчанию 10, максимум 100)
+        in: query
+        name: limit
+        type: integer
+      - description: Фильтр по названию продукта (поиск по подстроке)
+        in: query
+        name: name
+        type: string
+      - description: Минимальная цена (в копейках)
+        in: query
+        name: min_price
+        type: integer
+      - description: Максимальная цена (в копейках)
+        in: query
+        name: max_price
+        type: integer
+      - description: ID категории (с учетом подкатегорий)
+        in: query
+        name: category_id
+        type: integer
+      - description: ID магазина
+        in: query
+        name: shop_id
+        type: integer
+      - description: 'JSON-строка с фильтрами по атрибутам (exmpl: {'
+        in: query
+        name: attributes
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список продуктов и метаинформация
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Некорректный запрос
+          schema:
+            $ref: '#/definitions/apperror.Error'
+        "500":
+          description: Ошибка сервера при получении продуктов
+          schema:
+            $ref: '#/definitions/apperror.Error'
+      summary: Получить список продуктов с фильтрацией и пагинацией
+      tags:
+      - products
+  /products/{id}:
+    get:
+      description: Возвращает один продукт по его идентификатору
+      parameters:
+      - description: ID продукта
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.Product'
+        "400":
+          description: Некорректный ID
+          schema:
+            $ref: '#/definitions/apperror.Error'
+        "500":
+          description: Ошибка сервера при получении продукта
+          schema:
+            $ref: '#/definitions/apperror.Error'
+      summary: Получить продукт по его ID
+      tags:
+      - products
+  /products/{id}/reviews:
+    get:
+      consumes:
+      - application/json
+      description: Получает все отзывы о продукте по его ID
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список отзывов
+          schema:
+            items:
+              $ref: '#/definitions/entity.ProductReview'
+            type: array
+        "400":
+          description: Некорректный ID продукта
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Получение списка отзывов о продукте
+      tags:
+      - reviews
+    post:
+      consumes:
+      - application/json
+      description: Добавляет новый отзыв о продукте
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Данные отзыва
+        in: body
+        name: review
+        required: true
+        schema:
+          $ref: '#/definitions/dto.AddReviewDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Отзыв успешно добавлен
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Некорректный ввод
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Неавторизованный доступ
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Добавление отзыва о продукте
+      tags:
+      - reviews
+  /sellers/{id}/reviews:
+    get:
+      consumes:
+      - application/json
+      description: Получает все отзывы о продавце по его ID
+      parameters:
+      - description: Seller ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список отзывов
+          schema:
+            items:
+              $ref: '#/definitions/entity.SellerReview'
+            type: array
+        "400":
+          description: Некорректный ID продавца
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Продавец не найден
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Получение списка отзывов о продавце
+      tags:
+      - reviews
+    post:
+      consumes:
+      - application/json
+      description: Добавляет новый отзыв о продавце
+      parameters:
+      - description: Seller ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Данные отзыва
+        in: body
+        name: review
+        required: true
+        schema:
+          $ref: '#/definitions/dto.AddReviewDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Отзыв успешно добавлен
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Некорректный ввод
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Неавторизованный доступ
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Продавец не найден
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Добавление отзыва о продавце
+      tags:
+      - reviews
+securityDefinitions:
+  BearerAuth:
+    description: 'Bearer token for authentication. Format: "Bearer <token>"'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

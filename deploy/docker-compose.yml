@@ -7,34 +7,37 @@ services:
     environment:
       - DB_HOST=db
       - DB_PORT=5432
-      - DB_USER=postgres
+      - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=price_negotiation
+      - DB_NAME=${DB_NAME}
       - DB_MAX_OPEN_CONNS=4
       - DB_MAX_IDLE_CONNS=2
-      - SERVER_PORT=8080
+      - SERVER_PORT=${SERVER_PORT}
       - TOKEN_SECRET=${TOKEN_SECRET}
-      - TOKEN_ACCESS_DURATION=15m
-      - TOKEN_REFRESH_DURATION=24h
-      - ENVIRONMENT=dev
+      - TOKEN_ACCESS_DURATION=${TOKEN_ACCESS_DURATION}
+      - TOKEN_REFRESH_DURATION=${TOKEN_REFRESH_DURATION}
+      - ENVIRONMENT=${ENVIRONMENT}
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     networks:
       - app-network
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.app.rule=PathPrefix(`/`)"
       - "traefik.http.routers.app.entrypoints=web"
-      - "traefik.http.services.app.loadbalancer.server.port=8080"
+      - "traefik.http.services.app.loadbalancer.server.port=${SERVER_PORT}"
 
   db:
     image: postgres:17-alpine
+    ports: 
+      - "5432:5432"
     environment:
-      - POSTGRES_USER=postgres
+      - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
-      - POSTGRES_DB=price_negotiation
+      - POSTGRES_DB=${DB_NAME}
     healthcheck:
-      test: ["CMD-SHELL", "sh -c 'pg_isready -U postgres -d price_negotiation'"]
+      test: ["CMD-SHELL", "sh -c 'pg_isready -U ${DB_USER} -d ${DB_NAME}'"]
       interval: 5s
       timeout: 10s
       retries: 5

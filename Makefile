@@ -38,7 +38,7 @@ docker-build:
 	docker build --platform linux/amd64 -t strawberry -f deploy/Dockerfile .
 
 compose-up:
-	docker-compose -f deploy/docker-compose.yml up -d
+	docker-compose -f deploy/docker-compose.yml --env-file deploy/.env_dev up -d
 
 compose-down:
-	docker-compose -f deploy/docker-compose.yml down
+	docker-compose -f deploy/docker-compose.yml --env-file deploy/.env_dev down

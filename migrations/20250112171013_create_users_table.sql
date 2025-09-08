@@ -6,7 +6,8 @@ CREATE TABLE users (
     phone_number VARCHAR(20) NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
-    is_store BOOLEAN NOT NULL DEFAULT FALSE
+    is_store BOOLEAN NOT NULL DEFAULT FALSE,
+    is_admin BOOLEAN NOT NULL DEFAULT FALSE
 );
 -- +goose StatementEnd
 

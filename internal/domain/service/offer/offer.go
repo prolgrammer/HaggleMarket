@@ -15,6 +15,8 @@ type Repository interface {
 	SelectUserOffers(ctx context.Context, userID uint, limit, offset int) ([]entity.Offer, int, error)
 	UpdateOfferStatus(ctx context.Context, offer entity.Offer, userID uint, isStore bool) (entity.Offer, error)
 	DeleteOffer(ctx context.Context, offerID uint) (entity.Offer, error)
+	GetShopOwnerEmail(ctx context.Context, offerID uint) (string, error)
+	GetBuyerEmail(ctx context.Context, offerID uint) (string, error)
 }
 
 const (
@@ -52,7 +54,9 @@ func (os *Service) CreateOffer(
 		return 0, err
 	}
 
-	os.mailer.Registered(user.Name, user.Email)
+	os.mailer.OfferCreated(offerID, user.Email)
+	shopOwnerEmail, _ := os.offerRepository.GetShopOwnerEmail(ctx, offerID)
+	os.mailer.OfferReceived(offerID, shopOwnerEmail)
 
 	return offerID, nil
 }
@@ -103,7 +107,17 @@ func (os *Service) UpdateOfferStatus(
 	}
 
 	offerResp, err := os.offerRepository.UpdateOfferStatus(ctx, offer, userID, isStore)
+	if err != nil {
+		return entity.Offer{}, err
+	}
 
+	if isStore {
+		buyerEmail, _ := os.offerRepository.GetBuyerEmail(ctx, offer.ID)
+		os.mailer.StatusUpdate(offer.ID, offer.Status, buyerEmail)
+	} else {
+		shopOwnerEmail, _ := os.offerRepository.GetShopOwnerEmail(ctx, offer.ID)
+		os.mailer.StatusUpdate(offer.ID, offer.Status, shopOwnerEmail)
+	}
 	return offerResp, err
 }
 

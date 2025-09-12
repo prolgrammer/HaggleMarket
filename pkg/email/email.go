@@ -17,6 +17,7 @@ type MailerService interface {
 	Registered(userName string, userMail string)
 	StatusUpdate(offerID uint, status string, userMail string)
 	OfferReceived(offerID uint, userMail string)
+	OfferCreated(offerID uint, userMail string)
 	Stop(ctx context.Context)
 	SendGuestOfferNotification(email string, subject string, body string)
 }
@@ -62,6 +63,18 @@ func NewMailer(log *zap.Logger, emailCfg *config.EmailConfig) MailerService {
 	m.log.Info("email notifications are enabled")
 
 	return m
+}
+
+func (m *SMTPMailer) OfferCreated(offerID uint, userMail string) {
+	if !m.enabled {
+		return
+	}
+
+	subject := fmt.Sprintf("Stawberry: Offer Created (ID %d)", offerID)
+	body := fmt.Sprintf("Your offer (%d) has been successfully created", offerID)
+	msg := m.createMessage(userMail, subject, body)
+
+	m.enqueue(msg)
 }
 
 func (m *SMTPMailer) Stop(ctx context.Context) {

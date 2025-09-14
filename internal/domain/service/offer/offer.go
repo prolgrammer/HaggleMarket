@@ -15,6 +15,7 @@ type Repository interface {
 	SelectUserOffers(ctx context.Context, userID uint, limit, offset int) ([]entity.Offer, int, error)
 	UpdateOfferStatus(ctx context.Context, offer entity.Offer, userID uint, isStore bool) (entity.Offer, error)
 	DeleteOffer(ctx context.Context, offerID uint) (entity.Offer, error)
+	GetShopOwner(ctx context.Context, shopID uint) (entity.User, error)
 }
 
 const (
@@ -38,7 +39,7 @@ func NewService(offerRepository Repository, mailer email.MailerService) *Service
 func (os *Service) CreateOffer(
 	ctx context.Context,
 	offer entity.Offer,
-	user entity.User,
+	buyer entity.User,
 ) (uint, error) {
 
 	t := time.Now()
@@ -52,7 +53,16 @@ func (os *Service) CreateOffer(
 		return 0, err
 	}
 
-	os.mailer.Registered(user.Name, user.Email)
+	// get seller
+	shopID := offer.ShopID
+	seller, err := os.offerRepository.GetShopOwner(ctx, shopID)
+	if err != nil {
+		return 0, err
+	}
+	// send email to buyer
+	os.mailer.BuyerOfferReceived(offerID, buyer.Email)
+	// send email to seller
+	os.mailer.SellerOfferReceived(offerID, buyer.Email, seller.Email)
 
 	return offerID, nil
 }

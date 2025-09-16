@@ -115,15 +115,11 @@ func ClearDB() {
 }
 
 func DefaultAdminAcc() {
-	fmt.Printf("len(password)=%d\n", len(pkgCfg.DefAdmPswd))
-	fmt.Println("AD_PWD: ", pkgCfg.DefAdmPswd)
 	hash, err := security.HashArgon2id(pkgCfg.DefAdmPswd)
 	if err != nil {
 		pkgLog.Error("Failed to hash default admin password", zap.Error(err))
 		return
 	}
-
-	fmt.Println("hash: ", hash)
 
 	admin := model.User{
 		Name:     "admin",

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"github.com/EM-Stawberry/Stawberry/internal/adapter/auth"
 	"github.com/EM-Stawberry/Stawberry/internal/domain/service/audit"
 	"github.com/EM-Stawberry/Stawberry/internal/domain/service/notification"
@@ -89,7 +90,7 @@ func initializeApp(
 	jwtManager := auth.NewJWTManager(cfg.Token.Secret)
 
 	productService := product.NewService(productRepository)
-	offerService := offer.NewService(offerRepository, mailer)
+	offerService := offer.NewService(offerRepository, mailer, log)
 	tokenService := token.NewService(
 		tokenRepository,
 		jwtManager,
@@ -103,6 +104,8 @@ func initializeApp(
 	auditService := audit.NewAuditService(auditRepository)
 	guestOfferService := guestofferservice.NewService(guestOfferRepository, mailer, log)
 	log.Info("Services initialized")
+
+	offerService.AutoRejectExpiredOffers(context.Background())
 
 	healthHandler := handler.NewHealthHandler()
 	productHandler := handler.NewProductHandler(productService)

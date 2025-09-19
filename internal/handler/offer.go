@@ -38,6 +38,7 @@ func NewOfferHandler(offerService OfferService) *OfferHandler {
 // @accept json
 // @produce json
 // @param body body dto.PostOfferReq true "Offer creation request"
+// @security BearerAuth
 // @success 201 {object} dto.PostOfferResp
 // @failure 400 {object} apperror.Error
 // @failure 401 {object} apperror.Error
@@ -101,6 +102,7 @@ func (h *OfferHandler) PostOffer(c *gin.Context) {
 // @produce json
 // @param page query int false "Page number for pagination" default(1)
 // @param limit query int false "Number of items per page (5-100)" default(10)
+// @security BearerAuth
 // @success 200 {object} dto.GetUserOffersResp
 // @failure 400 {object} apperror.Error
 // @failure 500 {object} apperror.Error
@@ -162,13 +164,14 @@ func (h *OfferHandler) GetOffer(c *gin.Context) {
 // @produce	json
 // @param		id		path		int						true	"Offer ID"
 // @param		body	body		dto.PatchOfferStatusReq	true	"Offer status update request"
+// @security BearerAuth
 // @success	200		{object}	dto.PatchOfferStatusResp
 // @failure	400		{object}	apperror.Error
 // @failure	401		{object}	apperror.Error
 // @failure	404		{object}	apperror.Error
 // @failure	409		{object}	apperror.Error
 // @failure	500		{object}	apperror.Error
-// @Router		/offers/{offerID} [patch]
+// @Router		/offers/{id} [patch]
 func (h *OfferHandler) PatchOfferStatus(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("offerID"))
 	if err != nil {

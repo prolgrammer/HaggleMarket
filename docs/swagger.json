@@ -303,6 +303,11 @@
         },
         "/offers": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -351,6 +356,11 @@
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -406,8 +416,13 @@
                 }
             }
         },
-        "/offers/{offerID}": {
+        "/offers/{id}": {
             "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -991,7 +1006,8 @@
                     "type": "integer"
                 },
                 "price": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 },
                 "productID": {
                     "type": "integer"

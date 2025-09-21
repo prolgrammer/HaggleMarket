@@ -61,7 +61,7 @@ func AuthMiddleware(userGetter UserGetter, validator TokenValidator) gin.Handler
 		c.Set(helpers.UserName, user.Name)
 		c.Set(helpers.UserEmail, user.Email)
 
-		c.Set(helpers.UserIsAdminKey, false)
+		c.Set(helpers.UserIsAdminKey, user.IsAdmin)
 		c.Next()
 	}
 }

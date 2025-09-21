@@ -1,6 +1,7 @@
 package database
 
 import (
+	"fmt"
 	"github.com/EM-Stawberry/Stawberry/config"
 	"go.uber.org/zap"
 
@@ -16,6 +17,7 @@ var (
 )
 
 func InitDB(cfg *config.DBConfig, log *zap.Logger) (*sqlx.DB, func()) {
+	fmt.Println(cfg.GetDBConnString())
 	db, err := sqlx.Connect("pgx", cfg.GetDBConnString())
 	if err != nil {
 		log.Fatal("Failed to connect to database:", zap.Error(err))

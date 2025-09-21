@@ -12,6 +12,7 @@ type User struct {
 	Phone         string `db:"phone_number"`
 	Password      string `db:"password_hash"`
 	IsStore       bool   `db:"is_store"`
+	IsAdmin       bool   `db:"is_admin"`
 	Notifications []Notification
 }
 
@@ -22,6 +23,7 @@ func ConvertUserFromSvc(u user.User) User {
 		Phone:    u.Phone,
 		Password: u.Password,
 		IsStore:  u.IsStore,
+		IsAdmin:  u.IsAdmin,
 	}
 }
 

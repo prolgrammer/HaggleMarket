@@ -10,24 +10,24 @@ import (
 	"net/http/httptest"
 	"time"
 
-	"github.com/EM-Stawberry/Stawberry/pkg/email"
-
-	"github.com/EM-Stawberry/Stawberry/internal/handler/helpers"
-
 	"github.com/EM-Stawberry/Stawberry/internal/domain/entity"
 	"github.com/EM-Stawberry/Stawberry/internal/domain/service/offer"
 	"github.com/EM-Stawberry/Stawberry/internal/handler"
 	"github.com/EM-Stawberry/Stawberry/internal/handler/dto"
+	"github.com/EM-Stawberry/Stawberry/internal/handler/helpers"
 	"github.com/EM-Stawberry/Stawberry/internal/handler/middleware"
 	"github.com/EM-Stawberry/Stawberry/internal/repository"
+	"github.com/EM-Stawberry/Stawberry/pkg/email"
 	"github.com/gin-gonic/gin"
 	"github.com/jmoiron/sqlx"
 	"github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
 	"github.com/pressly/goose/v3"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
+	"go.uber.org/zap/zaptest"
 )
 
 var (
@@ -209,8 +209,10 @@ var _ = ginkgo.Describe("offer handlers", ginkgo.Ordered, func() {
 		}
 		mailer := newMockMailer()
 
+		log := zaptest.NewLogger(GinkgoT())
+
 		offerRepo = repository.NewOfferRepository(db)
-		offerServ = offer.NewService(offerRepo, mailer)
+		offerServ = offer.NewService(offerRepo, mailer, log)
 		offerHand = handler.NewOfferHandler(offerServ)
 	})
 

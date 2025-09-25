@@ -150,7 +150,7 @@ func (r *OfferRepository) SelectUserOffers(
 	return offers, total, nil
 }
 
-// SelectUserOffers lazy update helper function
+// updateExpiredOffers lazy update helper function
 func (r *OfferRepository) updateExpiredOffers(ctx context.Context, userID uint, tx *sqlx.Tx) error {
 	updateExpiredQuery, args := squirrel.Update("offers").
 		Set("status", "cancelled").
@@ -291,4 +291,29 @@ func (r *OfferRepository) DeleteOffer(
 	_ = offerID
 
 	return offer, nil
+}
+
+// RejectExpiredOffers удаляет истекшие предложения
+func (r *OfferRepository) RejectExpiredOffers(
+	ctx context.Context,
+) (int64, error) {
+	query, args := squirrel.Update("offers").
+		Set("status", "cancelled").
+		Set("updated_at", time.Now()).
+		Where(squirrel.Eq{"status": "pending"}).
+		Where("expires_at < NOW()").
+		PlaceholderFormat(squirrel.Dollar).
+		MustSql()
+
+	res, err := r.db.ExecContext(ctx, query, args...)
+	if err != nil {
+		return 0, apperror.New(apperror.DatabaseError, "failed to reject expired offers", err)
+	}
+
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return 0, apperror.New(apperror.DatabaseError, "failed to read affected rows", err)
+	}
+
+	return rows, nil
 }

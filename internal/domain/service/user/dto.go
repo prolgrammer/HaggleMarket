@@ -6,6 +6,7 @@ type User struct {
 	Email    string
 	Phone    string
 	IsStore  bool
+	IsAdmin  bool
 }
 
 type UpdateUser struct {

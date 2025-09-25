@@ -2,6 +2,7 @@ package offer
 
 import (
 	"context"
+	"go.uber.org/zap"
 	"time"
 
 	"github.com/EM-Stawberry/Stawberry/internal/app/apperror"
@@ -15,6 +16,7 @@ type Repository interface {
 	SelectUserOffers(ctx context.Context, userID uint, limit, offset int) ([]entity.Offer, int, error)
 	UpdateOfferStatus(ctx context.Context, offer entity.Offer, userID uint, isStore bool) (entity.Offer, error)
 	DeleteOffer(ctx context.Context, offerID uint) (entity.Offer, error)
+	RejectExpiredOffers(ctx context.Context) (int64, error)
 }
 
 const (
@@ -24,15 +26,18 @@ const (
 	statusPending   = "pending"
 
 	offerLifetime = 7 * 24 * time.Hour
+
+	intervalDeletingExpiredOffers = 24 * time.Hour
 )
 
 type Service struct {
 	offerRepository Repository
 	mailer          email.MailerService
+	logger          *zap.Logger
 }
 
-func NewService(offerRepository Repository, mailer email.MailerService) *Service {
-	return &Service{offerRepository: offerRepository, mailer: mailer}
+func NewService(offerRepository Repository, mailer email.MailerService, l *zap.Logger) *Service {
+	return &Service{offerRepository: offerRepository, mailer: mailer, logger: l}
 }
 
 func (os *Service) CreateOffer(
@@ -112,4 +117,31 @@ func (os *Service) DeleteOffer(
 	offerID uint,
 ) (entity.Offer, error) {
 	return os.offerRepository.DeleteOffer(ctx, offerID)
+}
+
+// AutoRejectExpiredOffers автоматически отклоняет заявки, у которых истёк срок
+func (os *Service) AutoRejectExpiredOffers(ctx context.Context) {
+	go func() {
+		// Считаем сколько осталось до ближайшей полуночи
+		now := time.Now()
+		nextMidnight := time.Date(
+			now.Year(), now.Month(), now.Day()+1,
+			0, 0, 0, 0, now.Location(),
+		)
+		time.Sleep(time.Until(nextMidnight))
+
+		ticker := time.NewTicker(intervalDeletingExpiredOffers)
+		defer ticker.Stop()
+
+		for {
+			rows, err := os.offerRepository.RejectExpiredOffers(ctx)
+			if err != nil {
+				os.logger.Warn("Error auto-rejecting offers", zap.Error(err))
+			} else if rows > 0 {
+				os.logger.Info("Auto-rejected expired offers", zap.Int("rows", int(rows)))
+			}
+
+			<-ticker.C
+		}
+	}()
 }

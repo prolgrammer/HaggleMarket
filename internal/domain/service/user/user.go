@@ -17,6 +17,7 @@ type Repository interface {
 	InsertUser(ctx context.Context, user User) (uint, error)
 	GetUser(ctx context.Context, email string) (entity.User, error)
 	GetUserByID(ctx context.Context, id uint) (entity.User, error)
+	GetShopOwner(ctx context.Context, shopID uint) (entity.User, error)
 }
 
 // PasswordManager выполняет операции с паролями, такие как хеширование и проверка

@@ -16,7 +16,8 @@ import (
 type MailerService interface {
 	Registered(userName string, userMail string)
 	StatusUpdate(offerID uint, status string, userMail string)
-	OfferReceived(offerID uint, userMail string)
+	BuyerOfferReceived(offerID uint, buyerMail string)
+	SellerOfferReceived(offerID uint, buyerMail string, sellerMail string)
 	Stop(ctx context.Context)
 	SendGuestOfferNotification(email string, subject string, body string)
 }
@@ -178,7 +179,7 @@ func (m *SMTPMailer) StatusUpdate(offerID uint, status string, userMail string) 
 	m.enqueue(msg)
 }
 
-func (m *SMTPMailer) OfferReceived(offerID uint, userMail string) {
+func (m *SMTPMailer) BuyerOfferReceived(offerID uint, userMail string) {
 	if !m.enabled {
 		return
 	}
@@ -186,6 +187,18 @@ func (m *SMTPMailer) OfferReceived(offerID uint, userMail string) {
 	subject := fmt.Sprintf("Stawberry: New Offer Received (ID %d)", offerID)
 	body := fmt.Sprintf("A new offer (%d) has been received", offerID)
 	msg := m.createMessage(userMail, subject, body)
+
+	m.enqueue(msg)
+}
+
+func (m *SMTPMailer) SellerOfferReceived(offerID uint, buyerMail string, sellerMail string) {
+	if !m.enabled {
+		return
+	}
+
+	subject := fmt.Sprintf("Stawberry: New Offer Received (ID %d)", offerID)
+	body := fmt.Sprintf("A new offer (%d) has been received from user with email: %s", offerID, buyerMail)
+	msg := m.createMessage(sellerMail, subject, body)
 
 	m.enqueue(msg)
 }

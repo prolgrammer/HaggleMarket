@@ -89,7 +89,7 @@ func initializeApp(
 	jwtManager := auth.NewJWTManager(cfg.Token.Secret)
 
 	productService := product.NewService(productRepository)
-	offerService := offer.NewService(offerRepository, mailer)
+	offerService := offer.NewService(offerRepository, userRepository, mailer)
 	tokenService := token.NewService(
 		tokenRepository,
 		jwtManager,

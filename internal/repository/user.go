@@ -99,3 +99,40 @@ func (r *UserRepository) GetUserByID(
 
 	return model.ConvertUserToEntity(userModel), nil
 }
+
+func (r *UserRepository) GetShopOwner(
+	ctx context.Context,
+	shopID uint) (entity.User, error) {
+	var seller model.User
+
+	getShopOwnerQuery, args := sq.Select("users.id", "users.name", "email", "phone_number", "password_hash", "is_store").
+		From("users").
+		InnerJoin("shops on shops.user_id = users.id").
+		Where(sq.Eq{"shops.id": shopID}).
+		PlaceholderFormat(sq.Dollar).
+		MustSql()
+
+	tx, err := r.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return entity.User{}, apperror.New(apperror.DatabaseError, "failed to begin transaction", err)
+	}
+	defer func() {
+		_ = tx.Rollback()
+	}()
+
+	err = tx.QueryRowxContext(ctx, getShopOwnerQuery, args...).StructScan(&seller)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return entity.User{}, apperror.New(apperror.DatabaseError,
+				"seller not found", nil)
+		}
+		return entity.User{}, apperror.New(apperror.DatabaseError, "error scanning into struct", err)
+	}
+	err = tx.Commit()
+	if err != nil {
+		return entity.User{}, apperror.New(apperror.DatabaseError, "failed to commit transaction", err)
+	}
+
+	return model.ConvertUserToEntity(seller), nil
+}

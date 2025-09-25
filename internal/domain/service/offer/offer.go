@@ -6,6 +6,7 @@ import (
 
 	"github.com/EM-Stawberry/Stawberry/internal/app/apperror"
 	"github.com/EM-Stawberry/Stawberry/internal/domain/entity"
+	"github.com/EM-Stawberry/Stawberry/internal/domain/service/user"
 	"github.com/EM-Stawberry/Stawberry/pkg/email"
 )
 
@@ -28,17 +29,21 @@ const (
 
 type Service struct {
 	offerRepository Repository
+	userRepository  user.Repository
 	mailer          email.MailerService
 }
 
-func NewService(offerRepository Repository, mailer email.MailerService) *Service {
-	return &Service{offerRepository: offerRepository, mailer: mailer}
+func NewService(offerRepository Repository, userRepository user.Repository, mailer email.MailerService) *Service {
+	return &Service{
+		offerRepository: offerRepository,
+		userRepository:  userRepository,
+		mailer:          mailer}
 }
 
 func (os *Service) CreateOffer(
 	ctx context.Context,
 	offer entity.Offer,
-	user entity.User,
+	buyer entity.User,
 ) (uint, error) {
 
 	t := time.Now()
@@ -52,7 +57,16 @@ func (os *Service) CreateOffer(
 		return 0, err
 	}
 
-	os.mailer.Registered(user.Name, user.Email)
+	// get seller
+	shopID := offer.ShopID
+	seller, err := os.userRepository.GetShopOwner(ctx, shopID)
+	if err != nil {
+		return 0, err
+	}
+	// send email to buyer
+	os.mailer.BuyerOfferReceived(offerID, buyer.Email)
+	// send email to seller
+	os.mailer.SellerOfferReceived(offerID, buyer.Email, seller.Email)
 
 	return offerID, nil
 }

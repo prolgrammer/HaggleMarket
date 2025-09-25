@@ -41,6 +41,36 @@ func (m *MockRepository) EXPECT() *MockRepositoryMockRecorder {
 	return m.recorder
 }
 
+// GetBuyerEmail mocks base method.
+func (m *MockRepository) GetBuyerEmail(ctx context.Context, offerID uint) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetBuyerEmail", ctx, offerID)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetBuyerEmail indicates an expected call of GetBuyerEmail.
+func (mr *MockRepositoryMockRecorder) GetBuyerEmail(ctx, offerID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBuyerEmail", reflect.TypeOf((*MockRepository)(nil).GetBuyerEmail), ctx, offerID)
+}
+
+// GetShopOwnerEmail mocks base method.
+func (m *MockRepository) GetShopOwnerEmail(ctx context.Context, offerID uint) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetShopOwnerEmail", ctx, offerID)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetShopOwnerEmail indicates an expected call of GetShopOwnerEmail.
+func (mr *MockRepositoryMockRecorder) GetShopOwnerEmail(ctx, offerID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetShopOwnerEmail", reflect.TypeOf((*MockRepository)(nil).GetShopOwnerEmail), ctx, offerID)
+}
+
 // GetUser mocks base method.
 func (m *MockRepository) GetUser(ctx context.Context, email string) (entity.User, error) {
 	m.ctrl.T.Helper()

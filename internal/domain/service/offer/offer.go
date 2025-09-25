@@ -6,6 +6,7 @@ import (
 
 	"github.com/EM-Stawberry/Stawberry/internal/app/apperror"
 	"github.com/EM-Stawberry/Stawberry/internal/domain/entity"
+	"github.com/EM-Stawberry/Stawberry/internal/domain/service/user"
 	"github.com/EM-Stawberry/Stawberry/pkg/email"
 )
 
@@ -15,8 +16,6 @@ type Repository interface {
 	SelectUserOffers(ctx context.Context, userID uint, limit, offset int) ([]entity.Offer, int, error)
 	UpdateOfferStatus(ctx context.Context, offer entity.Offer, userID uint, isStore bool) (entity.Offer, error)
 	DeleteOffer(ctx context.Context, offerID uint) (entity.Offer, error)
-	GetShopOwnerEmail(ctx context.Context, offerID uint) (string, error)
-	GetBuyerEmail(ctx context.Context, offerID uint) (string, error)
 }
 
 const (
@@ -30,11 +29,16 @@ const (
 
 type Service struct {
 	offerRepository Repository
+	userRepository  user.Repository
 	mailer          email.MailerService
 }
 
-func NewService(offerRepository Repository, mailer email.MailerService) *Service {
-	return &Service{offerRepository: offerRepository, mailer: mailer}
+func NewService(offerRepository Repository, userRepository user.Repository, mailer email.MailerService) *Service {
+	return &Service{
+		offerRepository: offerRepository,
+		userRepository:  userRepository,
+		mailer:          mailer,
+	}
 }
 
 func (os *Service) CreateOffer(
@@ -55,7 +59,7 @@ func (os *Service) CreateOffer(
 	}
 
 	os.mailer.OfferCreated(offerID, user.Email)
-	shopOwnerEmail, _ := os.offerRepository.GetShopOwnerEmail(ctx, offerID)
+	shopOwnerEmail, _ := os.userRepository.GetShopOwnerEmail(ctx, offerID)
 	os.mailer.OfferReceived(offerID, shopOwnerEmail)
 
 	return offerID, nil
@@ -112,10 +116,10 @@ func (os *Service) UpdateOfferStatus(
 	}
 
 	if isStore {
-		buyerEmail, _ := os.offerRepository.GetBuyerEmail(ctx, offer.ID)
+		buyerEmail, _ := os.userRepository.GetBuyerEmail(ctx, offer.ID)
 		os.mailer.StatusUpdate(offer.ID, offer.Status, buyerEmail)
 	} else {
-		shopOwnerEmail, _ := os.offerRepository.GetShopOwnerEmail(ctx, offer.ID)
+		shopOwnerEmail, _ := os.userRepository.GetShopOwnerEmail(ctx, offer.ID)
 		os.mailer.StatusUpdate(offer.ID, offer.Status, shopOwnerEmail)
 	}
 	return offerResp, err

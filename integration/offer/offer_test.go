@@ -16,6 +16,7 @@ import (
 
 	"github.com/EM-Stawberry/Stawberry/internal/domain/entity"
 	"github.com/EM-Stawberry/Stawberry/internal/domain/service/offer"
+	"github.com/EM-Stawberry/Stawberry/internal/domain/service/user"
 	"github.com/EM-Stawberry/Stawberry/internal/handler"
 	"github.com/EM-Stawberry/Stawberry/internal/handler/dto"
 	"github.com/EM-Stawberry/Stawberry/internal/handler/middleware"
@@ -166,6 +167,9 @@ func (m *mockMailer) StatusUpdate(offerID uint, status string, userMail string) 
 func (m *mockMailer) OfferReceived(offerID uint, userMail string) {
 }
 
+func (m *mockMailer) OfferCreated(offerID uint, userMail string) {
+}
+
 func (m *mockMailer) SendGuestOfferNotification(email string, subject string, body string) {
 }
 
@@ -194,6 +198,7 @@ var _ = ginkgo.Describe("offer handlers", ginkgo.Ordered, func() {
 		dbCont    *postgres.PostgresContainer
 		db        *sqlx.DB
 		offerRepo offer.Repository
+		userRepo  user.Repository
 		offerServ *offer.Service
 		offerHand *handler.OfferHandler
 		router    *gin.Engine
@@ -210,7 +215,8 @@ var _ = ginkgo.Describe("offer handlers", ginkgo.Ordered, func() {
 		mailer := newMockMailer()
 
 		offerRepo = repository.NewOfferRepository(db)
-		offerServ = offer.NewService(offerRepo, mailer)
+		userRepo = repository.NewUserRepository(db)
+		offerServ = offer.NewService(offerRepo, userRepo, mailer)
 		offerHand = handler.NewOfferHandler(offerServ)
 	})
 

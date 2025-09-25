@@ -6,6 +6,7 @@ import (
 
 	"github.com/EM-Stawberry/Stawberry/internal/app/apperror"
 	"github.com/EM-Stawberry/Stawberry/internal/domain/entity"
+	"github.com/EM-Stawberry/Stawberry/internal/domain/service/user"
 	"github.com/EM-Stawberry/Stawberry/pkg/email"
 )
 
@@ -15,7 +16,6 @@ type Repository interface {
 	SelectUserOffers(ctx context.Context, userID uint, limit, offset int) ([]entity.Offer, int, error)
 	UpdateOfferStatus(ctx context.Context, offer entity.Offer, userID uint, isStore bool) (entity.Offer, error)
 	DeleteOffer(ctx context.Context, offerID uint) (entity.Offer, error)
-	GetShopOwner(ctx context.Context, shopID uint) (entity.User, error)
 }
 
 const (
@@ -29,11 +29,15 @@ const (
 
 type Service struct {
 	offerRepository Repository
+	userRepository  user.Repository
 	mailer          email.MailerService
 }
 
-func NewService(offerRepository Repository, mailer email.MailerService) *Service {
-	return &Service{offerRepository: offerRepository, mailer: mailer}
+func NewService(offerRepository Repository, userRepository user.Repository, mailer email.MailerService) *Service {
+	return &Service{
+		offerRepository: offerRepository,
+		userRepository:  userRepository,
+		mailer:          mailer}
 }
 
 func (os *Service) CreateOffer(
@@ -55,7 +59,7 @@ func (os *Service) CreateOffer(
 
 	// get seller
 	shopID := offer.ShopID
-	seller, err := os.offerRepository.GetShopOwner(ctx, shopID)
+	seller, err := os.userRepository.GetShopOwner(ctx, shopID)
 	if err != nil {
 		return 0, err
 	}

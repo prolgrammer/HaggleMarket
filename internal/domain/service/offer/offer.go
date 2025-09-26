@@ -2,12 +2,14 @@ package offer
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/EM-Stawberry/Stawberry/internal/app/apperror"
 	"github.com/EM-Stawberry/Stawberry/internal/domain/entity"
 	"github.com/EM-Stawberry/Stawberry/internal/domain/service/user"
 	"github.com/EM-Stawberry/Stawberry/pkg/email"
+	"go.uber.org/zap"
 )
 
 type Repository interface {
@@ -59,8 +61,22 @@ func (os *Service) CreateOffer(
 	}
 
 	os.mailer.OfferCreated(offerID, user.Email)
-	shopOwnerEmail, _ := os.userRepository.GetShopOwnerEmail(ctx, offerID)
-	os.mailer.OfferReceived(offerID, shopOwnerEmail)
+	shopOwnerEmail, err := os.userRepository.GetShopOwnerEmail(ctx, offerID)
+	if err != nil {
+		if errors.Is(err, apperror.ErrOfferNotFound) {
+			zap.L().Warn("offer has no associated shop owner — email cannot be sent",
+				zap.Uint("offerID", offerID),
+				zap.Error(err),
+			)
+		} else {
+			zap.L().Error("failed to get shop owner email due to database error",
+				zap.Uint("offer_id", offerID),
+				zap.Error(err),
+			)
+		}
+	} else {
+		os.mailer.OfferReceived(offerID, shopOwnerEmail)
+	}
 
 	return offerID, nil
 }
@@ -116,13 +132,43 @@ func (os *Service) UpdateOfferStatus(
 	}
 
 	if isStore {
-		buyerEmail, _ := os.userRepository.GetBuyerEmail(ctx, offer.ID)
-		os.mailer.StatusUpdate(offer.ID, offer.Status, buyerEmail)
+		buyerEmail, err := os.userRepository.GetBuyerEmail(ctx, offer.ID)
+		if err != nil {
+			if errors.Is(err, apperror.ErrOfferNotFound) {
+				zap.L().Warn("offer has no associated buyer — email cannot be sent",
+					zap.Uint("offerID", offer.ID),
+					zap.Error(err),
+				)
+			} else {
+				zap.L().Error("failed to get buyer email due to database error",
+					zap.Uint("offer_id", offer.ID),
+					zap.Error(err),
+				)
+			}
+		} else {
+			os.mailer.StatusUpdate(offer.ID, offer.Status, buyerEmail)
+		}
+
 	} else {
-		shopOwnerEmail, _ := os.userRepository.GetShopOwnerEmail(ctx, offer.ID)
-		os.mailer.StatusUpdate(offer.ID, offer.Status, shopOwnerEmail)
+		shopOwnerEmail, err := os.userRepository.GetShopOwnerEmail(ctx, offer.ID)
+		if err != nil {
+			if errors.Is(err, apperror.ErrOfferNotFound) {
+				zap.L().Warn("offer has no associated shop owner — email cannot be sent",
+					zap.Uint("offerID", offer.ID),
+					zap.Error(err),
+				)
+			} else {
+				zap.L().Error("failed to get shop owner email due to database error",
+					zap.Uint("offer_id", offer.ID),
+					zap.Error(err),
+				)
+			}
+		} else {
+			os.mailer.StatusUpdate(offer.ID, offer.Status, shopOwnerEmail)
+		}
+
 	}
-	return offerResp, err
+	return offerResp, nil
 }
 
 func (os *Service) DeleteOffer(

@@ -17,6 +17,13 @@ services:
       - TOKEN_ACCESS_DURATION=${TOKEN_ACCESS_DURATION}
       - TOKEN_REFRESH_DURATION=${TOKEN_REFRESH_DURATION}
       - ENVIRONMENT=${ENVIRONMENT}
+      - EMAIL_ENABLED=${EMAIL_ENABLED}
+      - FROM_EMAIL=${FROM_EMAIL}
+      - FROM_PASSWORD=${FROM_PASSWORD}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - EMAIL_WORKER_POOL=${EMAIL_WORKER_POOL:-10}
+      - EMAIL_QUEUE_SIZE=${EMAIL_QUEUE_SIZE:-100}
     depends_on:
       db:
         condition: service_healthy
@@ -30,14 +37,14 @@ services:
 
   db:
     image: postgres:17-alpine
-    ports: 
+    ports:
       - "5432:5432"
     environment:
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=${DB_NAME}
     healthcheck:
-      test: ["CMD-SHELL", "sh -c 'pg_isready -U ${DB_USER} -d ${DB_NAME}'"]
+      test: [ "CMD-SHELL", "sh -c 'pg_isready -U ${DB_USER} -d ${DB_NAME}'" ]
       interval: 5s
       timeout: 10s
       retries: 5
@@ -68,6 +75,7 @@ services:
 volumes:
   db-data:
   traefik-config:
+
 
 networks:
   app-network:

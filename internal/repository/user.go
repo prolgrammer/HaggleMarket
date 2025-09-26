@@ -99,3 +99,50 @@ func (r *UserRepository) GetUserByID(
 
 	return model.ConvertUserToEntity(userModel), nil
 }
+
+func (r *UserRepository) GetBuyerEmail(
+	ctx context.Context,
+	offerID uint,
+) (string, error) {
+	getBuyerEmailQuery, args := sq.Select("users.email").
+		From("users").
+		InnerJoin("offers ON users.id = offers.user_id").
+		Where(sq.Eq{"offers.id": offerID}).
+		PlaceholderFormat(sq.Dollar).
+		MustSql()
+
+	var email string
+	err := r.db.GetContext(ctx, &email, getBuyerEmailQuery, args...)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", apperror.ErrOfferNotFound
+		}
+		return "", apperror.New(apperror.DatabaseError, "failed to get buyer email", err)
+	}
+
+	return email, nil
+}
+
+func (r *UserRepository) GetShopOwnerEmail(
+	ctx context.Context,
+	offerID uint,
+) (string, error) {
+	getShopOwnerEmailQuery, args := sq.Select("users.email").
+		From("users").
+		InnerJoin("shops ON users.id = shops.user_id").
+		InnerJoin("offers ON shops.id = offers.shop_id").
+		Where(sq.Eq{"offers.id": offerID}).
+		PlaceholderFormat(sq.Dollar).
+		MustSql()
+
+	var email string
+	err := r.db.GetContext(ctx, &email, getShopOwnerEmailQuery, args...)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", apperror.ErrOfferNotFound
+		}
+		return "", apperror.New(apperror.DatabaseError, "failed to get shop owner email", err)
+	}
+
+	return email, nil
+}

@@ -1,4 +1,11 @@
 -- test data
+TRUNCATE TABLE offers RESTART IDENTITY CASCADE;
+TRUNCATE TABLE shop_inventory RESTART IDENTITY CASCADE;
+TRUNCATE TABLE products RESTART IDENTITY CASCADE;
+TRUNCATE TABLE categories RESTART IDENTITY CASCADE;
+TRUNCATE TABLE shops RESTART IDENTITY CASCADE;
+TRUNCATE TABLE users RESTART IDENTITY CASCADE;
+
 insert into users (name, phone_number, password_hash, email, is_store)
 values ('user1','user1phone', 'no','user1email', true);
 insert into users (name, phone_number, password_hash, email, is_store)

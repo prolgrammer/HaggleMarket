@@ -42,10 +42,10 @@ func SeedDB() {
 	}
 
 	q := squirrel.Insert("users").
-		Columns("name", "email", "phone_number", "password_hash", "is_store")
+		Columns("name", "email", "phone_number", "password_hash", "is_store", "is_admin")
 
 	for _, u := range users {
-		q = q.Values(u.Name, u.Email, u.Phone, u.Password, u.IsStore)
+		q = q.Values(u.Name, u.Email, u.Phone, u.Password, u.IsStore, u.IsAdmin)
 	}
 
 	sql, args, err := q.PlaceholderFormat(squirrel.Dollar).ToSql()
@@ -90,7 +90,7 @@ func formDefaultUsers() ([]model.User, error) {
 			Email:    fmt.Sprintf("%s@%s.com", psw, psw),
 			Password: hash,
 			IsStore:  strings.Contains(psw, "shop"),
-			// IsAdmin: false,
+			IsAdmin:  false,
 		})
 	}
 	return users, nil
@@ -127,13 +127,13 @@ func DefaultAdminAcc() {
 		Email:    "admin@admin.com",
 		Password: hash,
 		IsStore:  false,
-		// IsAdmin: true,
+		IsAdmin:  true,
 	}
 
 	// PLEASE ADD ADMIN FLAG WHEN POSSIBLE
 	q, args := squirrel.Insert("users").
-		Columns("name", "email", "phone_number", "password_hash", "is_store").
-		Values(admin.Name, admin.Email, admin.Phone, admin.Password, admin.IsStore).
+		Columns("name", "email", "phone_number", "password_hash", "is_store", "is_admin").
+		Values(admin.Name, admin.Email, admin.Phone, admin.Password, admin.IsStore, admin.IsAdmin).
 		PlaceholderFormat(squirrel.Dollar).MustSql()
 
 	_, err = pkgDB.Exec(q, args...)
